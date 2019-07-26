@@ -27,6 +27,20 @@ from lucy.tree import ExpressionTree, LogicalOperator
                 children=[Expression(name="x", value="asd", operator=Operator.EQ)],
             ),
         ),
+        (
+            "NoT (x: asd)",
+            ExpressionTree(
+                operator=LogicalOperator.NOT,
+                children=[Expression(name="x", value="asd", operator=Operator.EQ)],
+            ),
+        ),
+        (
+            "((((NoT (((x: asd)))))))",
+            ExpressionTree(
+                operator=LogicalOperator.NOT,
+                children=[Expression(name="x", value="asd", operator=Operator.EQ)],
+            ),
+        ),
     ],
 )
 def test_simple_case(raw, parsed):

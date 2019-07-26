@@ -8,6 +8,9 @@ from .tree import ExpressionTree, LogicalOperator
 
 
 def parse(string: str) -> Union[ExpressionTree, Expression]:
+    """
+    User facing parse function. All user needs to know about
+    """
     cursor = Cursor(string)
     cursor.consume_spaces()
     parser = Parser()
@@ -47,6 +50,9 @@ class Parser:
         return self.read_expressions(cur)
 
     def read_expressions(self, cur: Cursor) -> Union[ExpressionTree, Expression]:
+        """
+        Main purpose is handling ands and ors and their priorities
+        """
         expression = self.read_expression(cur)
         cur.consume_spaces()
         if cur.starts_with_a_word("and") or cur.starts_with_a_word("or"):
@@ -55,6 +61,9 @@ class Parser:
             return expression
 
     def read_expression(self, cur: Cursor) -> Expression:
+        """
+        Read a single entry of "name: value"
+        """
         name = self.read_field_name(cur)
         cur.consume_spaces()
         cur.consume_known_char(":")
