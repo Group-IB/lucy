@@ -20,6 +20,13 @@ from lucy.tree import ExpressionTree, LogicalOperator
                 operator=Operator.EQ, name="fancy_field_name", value='$TrInG " !,?ad  '
             ),
         ),
+        (
+            "NoT x: asd",
+            ExpressionTree(
+                operator=LogicalOperator.NOT,
+                children=[Expression(name="x", value="asd", operator=Operator.EQ)],
+            ),
+        ),
     ],
 )
 def test_simple_case(raw, parsed):
