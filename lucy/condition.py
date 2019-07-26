@@ -1,6 +1,7 @@
+import enum
 from dataclasses import dataclass
 from typing import Any
-import enum
+
 
 class Operator(enum.Enum):
     GTE = enum.auto()
@@ -10,11 +11,16 @@ class Operator(enum.Enum):
     EQ = enum.auto()
     NEQ = enum.auto()
 
+
 @dataclass
-class Expression():
+class Condition:
     """
-    A single expression. Designed to be a leaf of expression tree
+    A single condition. Designed to be a leaf of condition tree
     """
+
     operator: Operator
     name: str
     value: Any
+
+    def pprint(self, pad=0):
+        print(" " * pad + str(self))

@@ -1,49 +1,84 @@
 import pytest
 
 from lucy import parse
-from lucy.expression import Expression, Operator
+from lucy.condition import Condition, Operator
 from lucy.parsing import Cursor
-from lucy.tree import ExpressionTree, LogicalOperator
+from lucy.tree import ConditionTree, LogicalOperator
 
 
 @pytest.mark.parametrize(
     "raw, parsed",
     [
-        ("a:1", Expression(operator=Operator.EQ, name="a", value="1")),
-        (
-            "  \t  a    : 1   \t\t",
-            Expression(operator=Operator.EQ, name="a", value="1"),
-        ),
+        ("a:1", Condition(operator=Operator.EQ, name="a", value="1")),
+        ("  \t  a    : 1   \t\t", Condition(operator=Operator.EQ, name="a", value="1")),
         (
             "fancy_field_name: '$TrInG \" !,?ad  '",
-            Expression(
+            Condition(
                 operator=Operator.EQ, name="fancy_field_name", value='$TrInG " !,?ad  '
             ),
         ),
         (
             "NoT x: asd",
-            ExpressionTree(
+            ConditionTree(
                 operator=LogicalOperator.NOT,
-                children=[Expression(name="x", value="asd", operator=Operator.EQ)],
+                children=[Condition(name="x", value="asd", operator=Operator.EQ)],
             ),
         ),
         (
             "NoT (x: asd)",
-            ExpressionTree(
+            ConditionTree(
                 operator=LogicalOperator.NOT,
-                children=[Expression(name="x", value="asd", operator=Operator.EQ)],
+                children=[Condition(name="x", value="asd", operator=Operator.EQ)],
             ),
         ),
         (
             "((((NoT (((x: asd)))))))",
-            ExpressionTree(
+            ConditionTree(
                 operator=LogicalOperator.NOT,
-                children=[Expression(name="x", value="asd", operator=Operator.EQ)],
+                children=[Condition(name="x", value="asd", operator=Operator.EQ)],
+            ),
+        ),
+        (
+            "a: x AND NOT b: y",
+            ConditionTree(
+                operator=LogicalOperator.AND,
+                children=[
+                    Condition(name="a", value="x", operator=Operator.EQ),
+                    ConditionTree(
+                        operator=LogicalOperator.NOT,
+                        children=[Condition(name="b", value="y", operator=Operator.EQ)],
+                    ),
+                ],
+            ),
+        ),
+        (
+            "a: x OR b: y AND c  : z OR NOT d: xx",
+            ConditionTree(
+                operator=LogicalOperator.OR,
+                children=[
+                    Condition(name="a", value="x", operator=Operator.EQ),
+                    ConditionTree(
+                        operator=LogicalOperator.AND,
+                        children=[
+                            Condition(name="b", value="y", operator=Operator.EQ),
+                            Condition(name="c", value="z", operator=Operator.EQ),
+                        ],
+                    ),
+                    ConditionTree(
+                        operator=LogicalOperator.NOT,
+                        children=[
+                            Condition(name="d", value="xx", operator=Operator.EQ)
+                        ],
+                    ),
+                ],
             ),
         ),
     ],
 )
 def test_simple_case(raw, parsed):
+    actual = parse(raw)
+    actual.pprint()
+    parsed.pprint()
     assert parse(raw) == parsed
 
 
