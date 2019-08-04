@@ -1,9 +1,9 @@
 import pytest
 
-from lucy import parse
-from lucy.condition import Condition, Operator
-from lucy.parsing import Cursor
-from lucy.tree import ConditionTree, LogicalOperator
+from lucyparser import parse
+from lucyparser.condition import Condition, Operator
+from lucyparser.parsing import Cursor
+from lucyparser.tree import ConditionTree, LogicalOperator
 
 
 @pytest.mark.parametrize(

@@ -1,7 +1,7 @@
 [tool.poetry]
-name = "lucy"
+name = "lucyparser"
 version = "0.1.0"
-description = ""
+description = "Lucene-like syntax parser"
 authors = ["Timur <timur.makarchuk@gmail.com>"]
 
 [tool.poetry.dependencies]
