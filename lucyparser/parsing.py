@@ -140,30 +140,27 @@ class Parser:
                 return name
 
     def read_field_value(self, cur: Cursor) -> str:
-        def read_until(terminator: str, check_slash_before_terminator=False) -> str:
+        def read_until(terminator: str) -> str:
             value = ""
             while 1:
-                is_slash = False
                 char = cur.pop()
 
-                if check_slash_before_terminator and char == "\\":
-                    is_slash = True
+                if char == "\\":
                     char = cur.pop()
 
-                if not is_slash and char == terminator:
+                    if char != terminator:
+                        value += "\\"
+                elif char == terminator:
                     return value
-
-                if is_slash and char != terminator:
-                    value += "\\"
 
                 value += char
 
         if cur.starts_with_a_char('"'):
             cur.consume_known_char('"')
-            return read_until('"', check_slash_before_terminator=True)
+            return read_until('"')
         if cur.starts_with_a_char("'"):
             cur.consume_known_char("'")
-            return read_until("'", check_slash_before_terminator=True)
+            return read_until("'")
         next_char = cur.peek()
         if not next_char:
             raise Exception("Unexpected end of input")
