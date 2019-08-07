@@ -73,6 +73,8 @@ from lucyparser.tree import ConditionTree, LogicalOperator
                 ],
             ),
         ),
+        ("a: 'use \\' quote'", Condition(operator=Operator.EQ, name="a", value="use ' quote")),
+        ('a: "use \\" quote"', Condition(operator=Operator.EQ, name="a", value='use " quote')),
     ],
 )
 def test_simple_case(raw, parsed):
