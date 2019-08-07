@@ -143,13 +143,10 @@ class Parser:
         def read_until(terminator: str) -> str:
             value = ""
             while 1:
-                if not cur.empty():
-                    char = cur.pop()
-                    if char == terminator:
-                        return value
-                    value += char
-                else:
-                    raise Exception("Unexpected end of input")
+                char = cur.pop()
+                if char == terminator:
+                    return value
+                value += char
 
         if cur.starts_with_a_char('"'):
             cur.consume_known_char('"')
