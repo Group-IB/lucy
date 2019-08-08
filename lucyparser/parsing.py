@@ -1,15 +1,11 @@
 import string
-from dataclasses import dataclass
-from typing import List, Tuple, Union
+from typing import List, Tuple
 
-from .condition import Condition, Operator
 from .cursor import Cursor
-from .tree import ConditionTree, LogicalOperator
-
-Expression = Union[ConditionTree, Condition]
+from .tree import Tree, TreeType
 
 
-def parse(string: str) -> Union[ConditionTree, Condition]:
+def parse(string: str) -> Tree:
     """
     User facing parse function. All user needs to know about
     """
@@ -42,38 +38,37 @@ class Parser:
         "v": "\v"
     }
 
-    def read_tree(self, cur: Cursor) -> Expression:
+    def read_tree(self, cur: Cursor) -> Tree:
         tree = self.read_expressions(cur)
-        if isinstance(tree, ConditionTree):
-            tree.simplify()
+        tree.simplify()
         return tree
 
-    def read_expressions(self, cur: Cursor) -> Expression:
+    def read_expressions(self, cur: Cursor) -> Tree:
         """
         Read several expressions, separated with logical operators
         """
 
         def pop_expression_from_stack(
-            op_stack: List[LogicalOperator], expr_stack: List[Expression]
-        ) -> Expression:
+            op_stack: List[TreeType], expr_stack: List[Tree]
+        ) -> Tree:
             op = operators_stack.pop()
             right = expressions_stack.pop()
             left = expressions_stack.pop()
-            return ConditionTree(operator=op, children=[left, right])
+            return Tree(tree_type=op, children=[left, right])
 
         expression = self.read_expression(cur)
         cur.consume_spaces()
-        operators_stack: List[LogicalOperator] = []
-        expressions_stack: List[Expression] = [expression]
+        operators_stack: List[TreeType] = []
+        expressions_stack: List[Tree] = [expression]
         while 1:
             if cur.starts_with_a_word("and"):
-                op, expr = self.read_operator(cur, LogicalOperator.AND)
+                op, expr = self.read_operator(cur, TreeType.AND)
                 operators_stack.append(op)
                 expressions_stack.append(expr)
                 cur.consume_spaces()
             elif cur.starts_with_a_word("or"):
-                op, expr = self.read_operator(cur, LogicalOperator.OR)
-                if operators_stack and operators_stack[-1] == LogicalOperator.AND:
+                op, expr = self.read_operator(cur, TreeType.OR)
+                if operators_stack and operators_stack[-1] == TreeType.AND:
                     expressions_stack.append(
                         pop_expression_from_stack(operators_stack, expressions_stack)
                     )
@@ -89,12 +84,12 @@ class Parser:
         return expressions_stack[0]
 
     def read_operator(
-        self, cur: Cursor, op: LogicalOperator
-    ) -> Tuple[LogicalOperator, Expression]:
+        self, cur: Cursor, op: TreeType
+    ) -> Tuple[TreeType, Tree]:
         """
         Read operator and folowing expression from the stream
         """
-        if op == LogicalOperator.AND:
+        if op == TreeType.AND:
             length = 3
         else:
             length = 2
@@ -104,7 +99,7 @@ class Parser:
         cur.consume_spaces()
         return op, expression
 
-    def read_expression(self, cur: Cursor) -> Expression:
+    def read_expression(self, cur: Cursor) -> Tree:
         """
         Read a single expression:
         Expression is:
@@ -120,14 +115,16 @@ class Parser:
         if cur.starts_with_a_word("not"):
             cur.consume(3)
             cur.consume_spaces()
-            tree = ConditionTree(
-                operator=LogicalOperator.NOT, children=[self.read_expression(cur)]
+            tree = Tree(
+                tree_type=TreeType.NOT, children=[self.read_expression(cur)]
             )
             cur.consume_spaces()
             return tree
-        return self.read_condition(cur)
+        return Tree(
+            tree_type=TreeType.AND, children=[self.read_condition(cur)]
+        )
 
-    def read_condition(self, cur: Cursor) -> Condition:
+    def read_condition(self, cur: Cursor) -> Tree:
         """
         Read a single entry of "name: value"
         """
@@ -136,7 +133,7 @@ class Parser:
         cur.consume_known_char(":")
         cur.consume_spaces()
         value = self.read_field_value(cur)
-        return Condition(name=name, value=value, operator=Operator.EQ)
+        return Tree(name=name, value=value, tree_type=TreeType.EQ)
 
     def read_field_name(self, cur: Cursor) -> str:
         name = cur.pop()

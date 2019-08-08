@@ -1,80 +1,79 @@
 import pytest
 
 from lucyparser import parse
-from lucyparser.condition import Condition, Operator
 from lucyparser.parsing import Cursor
-from lucyparser.tree import ConditionTree, LogicalOperator
+from lucyparser.tree import Tree, TreeType
 
 
 @pytest.mark.parametrize(
     "raw, parsed",
     [
-        ("a:1", Condition(operator=Operator.EQ, name="a", value="1")),
-        ("  \t  a    : 1   \t\t", Condition(operator=Operator.EQ, name="a", value="1")),
+        ("a:1", Tree(tree_type=TreeType.EQ, name="a", value="1")),
+        ("  \t  a    : 1   \t\t", Tree(tree_type=TreeType.EQ, name="a", value="1")),
         (
             "fancy_field_name: '$TrInG \" !,?ad  '",
-            Condition(
-                operator=Operator.EQ, name="fancy_field_name", value='$TrInG " !,?ad  '
+            Tree(
+                tree_type=TreeType.EQ, name="fancy_field_name", value='$TrInG " !,?ad  '
             ),
         ),
         (
             "NoT x: asd",
-            ConditionTree(
-                operator=LogicalOperator.NOT,
-                children=[Condition(name="x", value="asd", operator=Operator.EQ)],
+            Tree(
+                tree_type=TreeType.NOT,
+                children=[Tree(name="x", value="asd", tree_type=TreeType.EQ)],
             ),
         ),
         (
             "NoT (x: asd)",
-            ConditionTree(
-                operator=LogicalOperator.NOT,
-                children=[Condition(name="x", value="asd", operator=Operator.EQ)],
+            Tree(
+                tree_type=TreeType.NOT,
+                children=[Tree(name="x", value="asd", tree_type=TreeType.EQ)],
             ),
         ),
         (
             "((((NoT (((x: asd)))))))",
-            ConditionTree(
-                operator=LogicalOperator.NOT,
-                children=[Condition(name="x", value="asd", operator=Operator.EQ)],
+            Tree(
+                tree_type=TreeType.NOT,
+                children=[Tree(name="x", value="asd", tree_type=TreeType.EQ)],
             ),
         ),
         (
             "a: x AND NOT b: y",
-            ConditionTree(
-                operator=LogicalOperator.AND,
+            Tree(
+                tree_type=TreeType.AND,
                 children=[
-                    Condition(name="a", value="x", operator=Operator.EQ),
-                    ConditionTree(
-                        operator=LogicalOperator.NOT,
-                        children=[Condition(name="b", value="y", operator=Operator.EQ)],
+                    Tree(name="a", value="x", tree_type=TreeType.EQ),
+                    Tree(
+                        tree_type=TreeType.NOT,
+                        children=[Tree(name="b", value="y", tree_type=TreeType.EQ)],
                     ),
                 ],
             ),
         ),
         (
             "a: x OR b: y AND c  : z OR NOT d: xx",
-            ConditionTree(
-                operator=LogicalOperator.OR,
+            Tree(
+                tree_type=TreeType.OR,
                 children=[
-                    Condition(name="a", value="x", operator=Operator.EQ),
-                    ConditionTree(
-                        operator=LogicalOperator.AND,
+                    Tree(name="a", value="x", tree_type=TreeType.EQ),
+                    Tree(
+                        tree_type=TreeType.AND,
                         children=[
-                            Condition(name="b", value="y", operator=Operator.EQ),
-                            Condition(name="c", value="z", operator=Operator.EQ),
+                            Tree(name="b", value="y", tree_type=TreeType.EQ),
+                            Tree(name="c", value="z", tree_type=TreeType.EQ),
                         ],
                     ),
-                    ConditionTree(
-                        operator=LogicalOperator.NOT,
+                    Tree(
+                        tree_type=TreeType.NOT,
                         children=[
-                            Condition(name="d", value="xx", operator=Operator.EQ)
+                            Tree(name="d", value="xx", tree_type=TreeType.EQ)
                         ],
                     ),
                 ],
             ),
         ),
-        ("a: 'use \\' quote'", Condition(operator=Operator.EQ, name="a", value="use ' quote")),
-        ('a: "use \\" quote"', Condition(operator=Operator.EQ, name="a", value='use " quote')),
+        ("a: 'use \\' quote'", Tree(tree_type=TreeType.EQ, name="a", value="use ' quote")),
+        ('a: "use \\" quote"', Tree(tree_type=TreeType.EQ, name="a", value='use " quote')),
     ],
 )
 def test_simple_case(raw, parsed):
