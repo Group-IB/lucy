@@ -29,6 +29,18 @@ class Parser:
     name_chars = string.ascii_letters + string.digits + "_."
     name_first_chars = string.ascii_letters + "_"
     value_chars = string.ascii_letters + string.digits
+    escaped_chars = {
+        "\\": "\\",
+        "n": "\n",
+        '"': '"',
+        "'": "'",
+        "a": "\a",
+        "b": "\b",
+        "f": "\f",
+        "r": "\r",
+        "t": "\t",
+        "v": "\v"
+    }
 
     def read_tree(self, cur: Cursor) -> Expression:
         tree = self.read_expressions(cur)
@@ -143,13 +155,23 @@ class Parser:
         def read_until(terminator: str) -> str:
             value = ""
             while 1:
-                if not cur.empty():
+                char = cur.pop()
+
+                if char == "\\":
                     char = cur.pop()
-                    if char == terminator:
-                        return value
-                    value += char
-                else:
-                    raise Exception("Unexpected end of input")
+                    char_with_escaped_slash = self.escaped_chars.get(char)
+
+                    if char_with_escaped_slash is None:
+                        raise Exception(
+                            f"Illegal literal with escaped slash: {char}"
+                        )
+                    value += char_with_escaped_slash
+                    continue
+
+                elif char == terminator:
+                    return value
+
+                value += char
 
         if cur.starts_with_a_char('"'):
             cur.consume_known_char('"')
