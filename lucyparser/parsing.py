@@ -2,6 +2,7 @@ import string
 from typing import List
 
 from .cursor import Cursor
+from .exceptions import LucyUnexpectedEndException, LucyUnexpectedCharacter, LucyIllegalLiteral
 from .tree import BaseNode, simplify, NotNode, AndNode, ExpressionNode, Operator, LogicalNode, get_logical_node, LogicalOperator
 
 
@@ -15,9 +16,7 @@ def parse(string: str) -> BaseNode:
     tree = parser.read_tree(cursor)
     cursor.consume_spaces()
     if not cursor.empty():
-        raise Exception(
-            f"Input should've been finished by now! Left: {cursor.input[cursor.cursor:]}"
-        )
+        raise LucyUnexpectedEndException()
     return tree
 
 
@@ -130,9 +129,8 @@ class Parser:
     def read_field_name(self, cur: Cursor) -> str:
         name = cur.pop()
         if name not in self.name_first_chars:
-            raise Exception(
-                f"Unexpected character {name}. Expected one of {self.name_first_chars}"
-            )
+            raise LucyUnexpectedCharacter(unexpected=name, expected=self.name_first_chars)
+
         while 1:
             next_char = cur.peek()
             if next_char and next_char in self.name_chars:
@@ -151,9 +149,7 @@ class Parser:
                     char_with_escaped_slash = self.escaped_chars.get(char)
 
                     if char_with_escaped_slash is None:
-                        raise Exception(
-                            f"Illegal literal with escaped slash: {char}"
-                        )
+                        raise LucyIllegalLiteral(literal=char)
                     value += char_with_escaped_slash
                     continue
 
@@ -170,11 +166,10 @@ class Parser:
             return read_until("'")
         next_char = cur.peek()
         if not next_char:
-            raise Exception("Unexpected end of input")
+            raise LucyUnexpectedEndException()
         if next_char not in self.value_chars:
-            raise Exception(
-                f"Unexpected character {next_char}, expected one of {self.value_chars}"
-            )
+            raise LucyUnexpectedCharacter(unexpected=next_char, expected=self.value_chars)
+
         value = cur.pop()
         while 1:
             next_char = cur.peek()

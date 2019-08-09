@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from typing import Optional
 
+from .exceptions import LucyUnexpectedEndException, LucyUnexpectedCharacter
+
 
 @dataclass
 class Cursor:
@@ -16,7 +18,7 @@ class Cursor:
         if next_char:
             self.cursor += 1
             return next_char
-        raise Exception("Unexpected end of input")
+        raise LucyUnexpectedEndException()
 
     def peek(self, n=0) -> Optional[str]:
         """
@@ -51,12 +53,12 @@ class Cursor:
     def consume_known_char(self, char: str):
         actual_char = self.pop()
         if actual_char != char:
-            raise Exception(f"Unexpected character {actual_char}. Expected {char}")
+            raise LucyUnexpectedCharacter(unexpected=actual_char, expected=char)
 
     def consume(self, n: int):
         for _ in range(n):
             if not self.pop():
-                raise Exception(f"Unexpected end of input")
+                raise LucyUnexpectedEndException()
 
     def consume_spaces(self):
         while 1:

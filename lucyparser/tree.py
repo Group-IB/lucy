@@ -2,6 +2,8 @@ import enum
 from dataclasses import dataclass, field
 from typing import List, Any, Optional
 
+from .exceptions import LucyUndefinedOperator
+
 
 class Operator(enum.Enum):
     GTE = enum.auto()
@@ -65,7 +67,7 @@ def get_logical_node(logical_operator: LogicalOperator, children: List = field(d
     }.get(logical_operator)
 
     if node_class is None:
-        raise Exception(f"Undefined operator: {logical_operator}")
+        raise LucyUndefinedOperator(operator=logical_operator)
 
     return node_class(children=children)
 
