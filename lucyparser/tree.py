@@ -3,11 +3,7 @@ from dataclasses import dataclass, field
 from typing import List, Any, Optional
 
 
-class TreeType(enum.Enum):
-    NOT = enum.auto()
-    AND = enum.auto()
-    OR = enum.auto()
-
+class Operator(enum.Enum):
     GTE = enum.auto()
     LTE = enum.auto()
     GT = enum.auto()
@@ -16,53 +12,102 @@ class TreeType(enum.Enum):
     NEQ = enum.auto()
 
 
-LOGICAL_TYPES = [TreeType.NOT, TreeType.AND, TreeType.OR]
+class LogicalOperator(enum.Enum):
+    NOT = enum.auto()
+    AND = enum.auto()
+    OR = enum.auto()
 
 
 @dataclass
-class Tree:
-    tree_type: TreeType
+class BaseNode:
+    def pprint(self, pad=0):
+        print(" " * pad + str(self.operator))
+
+
+@dataclass
+class LogicalNode(BaseNode):
     children: List = field(default_factory=list)
 
-    name: Optional[str] = None
-    value: Any = None
+    _logical_operator = Optional[LogicalOperator]
+
+    @property
+    def operator(self):
+        return self._logical_operator
 
     def pprint(self, pad=0):
-        print(" " * pad + str(self.tree_type))
+        super().pprint(pad=pad)
+
         pad += 2
         for child in self.children:
             child.pprint(pad)
 
-    def simplify(self):
-        """
-        Merge nested ORs and ANDs
-        Transform
+
+@dataclass
+class AndNode(LogicalNode):
+    _logical_operator = LogicalOperator.AND
+
+
+@dataclass
+class OrNode(LogicalNode):
+    _logical_operator = LogicalOperator.OR
+
+
+@dataclass
+class NotNode(LogicalNode):
+    _logical_operator = LogicalOperator.NOT
+
+
+def get_logical_node(logical_operator: LogicalOperator, children: List = field(default_factory=list)):
+    node_class = {
+        LogicalOperator.AND: AndNode,
+        LogicalOperator.OR: OrNode,
+        LogicalOperator.NOT: NotNode,
+    }.get(logical_operator)
+
+    if node_class is None:
+        raise Exception(f"Undefined operator: {logical_operator}")
+
+    return node_class(children=children)
+
+
+@dataclass
+class ExpressionNode(BaseNode):
+    name: Optional[str]
+    value: Any
+
+    operator: Operator
+
+
+def simplify(tree: BaseNode) -> BaseNode:
+    """
+    Merge nested ORs and ANDs
+    Transform
+    AND
+        a
         AND
-            a
-            AND
-                b
-                c
-        into
-        AND
-            a
             b
             c
-        """
-        if (self.tree_type == TreeType.AND) and (len(self.children) == 1):
-            self.tree_type = self.children[0].tree_type
-            self.value = self.children[0].value
-            self.name = self.children[0].name
+    into
+    AND
+        a
+        b
+        c
+    """
+    if not isinstance(tree, LogicalNode):
+        return tree
 
-            self.children = []
+    if isinstance(tree, AndNode) and (len(tree.children) == 1):
+        return tree.children[0]
 
-        for child in self.children:
-            if child.tree_type in LOGICAL_TYPES:
-                child.simplify()
-        if self.tree_type != TreeType.NOT:
-            new_children = []
-            for child in self.children:
-                if child.tree_type == self.tree_type:
-                    new_children.extend(child.children)
-                else:
-                    new_children.append(child)
-            self.children = new_children
+    tree.children = [simplify(child) if isinstance(child, LogicalNode) else child for child in tree.children]
+
+    if not isinstance(tree, NotNode):
+        new_children: List[BaseNode] = []
+        for child in tree.children:
+            if isinstance(child, LogicalNode) and type(child) == type(tree):
+                new_children.extend(child.children)
+            else:
+                new_children.append(child)
+        tree.children = new_children
+
+    return tree
