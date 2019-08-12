@@ -68,6 +68,7 @@ from lucyparser.tree import ExpressionNode, Operator, NotNode, AndNode, OrNode
         ('a: "use \\" quote"', ExpressionNode(operator=Operator.EQ, name="a", value='use " quote')),
         ('a: -1', ExpressionNode(operator=Operator.EQ, name="a", value='-1')),
         ('a: 123.456', ExpressionNode(operator=Operator.EQ, name="a", value='123.456')),
+        ('(    spaces_before_name   : 123  )', ExpressionNode(operator=Operator.EQ, name="spaces_before_name", value='123')),
     ],
 )
 def test_simple_case(raw, parsed):

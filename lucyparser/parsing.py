@@ -119,6 +119,7 @@ class Parser:
         """
         Read a single entry of "name: value"
         """
+        cur.consume_spaces()
         name = self.read_field_name(cur)
         cur.consume_spaces()
         cur.consume_known_char(":")
