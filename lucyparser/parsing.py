@@ -23,7 +23,7 @@ def parse(string: str) -> BaseNode:
 class Parser:
     name_chars = string.ascii_letters + string.digits + "_."
     name_first_chars = string.ascii_letters + "_"
-    value_chars = string.ascii_letters + string.digits
+    value_chars = string.ascii_letters + string.digits + "-"
     escaped_chars = {
         "\\": "\\",
         "n": "\n",
