@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from typing import Optional
 
+from lucyparser.tree import USER_OPERATOR_TO_OPERATOR, Operator, UserOperator
 from .exceptions import LucyUnexpectedEndException, LucyUnexpectedCharacter
 
 
@@ -54,6 +55,31 @@ class Cursor:
         actual_char = self.pop()
         if actual_char != char:
             raise LucyUnexpectedCharacter(unexpected=actual_char, expected=char)
+
+    def consume_known_operator(self) -> Operator:
+        current_operator = self.pop()
+
+        if current_operator == UserOperator.EQ:
+            return USER_OPERATOR_TO_OPERATOR[current_operator]
+
+        equal_is_possible = current_operator in UserOperator.equal_is_possible
+        equal_is_required = current_operator in UserOperator.equal_is_required
+
+        if not (equal_is_possible or equal_is_required):
+            raise LucyUnexpectedCharacter(unexpected=current_operator, expected="".join((*UserOperator.equal_is_required,
+                                                                                         *UserOperator.equal_is_possible)))
+
+        next_char = self.peek()
+
+        if next_char == UserOperator.EQUAL_SIGN:
+            self.pop()
+            return USER_OPERATOR_TO_OPERATOR[current_operator + UserOperator.EQUAL_SIGN]
+        elif equal_is_possible:
+            return USER_OPERATOR_TO_OPERATOR[current_operator]
+        elif equal_is_required:
+            raise LucyUnexpectedCharacter(unexpected=next_char, expected=UserOperator.EQUAL_SIGN)
+
+        raise LucyUnexpectedEndException()
 
     def consume(self, n: int):
         for _ in range(n):

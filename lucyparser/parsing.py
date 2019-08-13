@@ -3,7 +3,7 @@ from typing import List
 
 from .cursor import Cursor
 from .exceptions import LucyUnexpectedEndException, LucyUnexpectedCharacter, LucyIllegalLiteral
-from .tree import BaseNode, simplify, NotNode, AndNode, ExpressionNode, Operator, LogicalNode, get_logical_node, LogicalOperator
+from .tree import BaseNode, simplify, NotNode, AndNode, ExpressionNode, LogicalNode, get_logical_node, LogicalOperator
 
 
 def parse(string: str) -> BaseNode:
@@ -35,6 +35,21 @@ class Parser:
         "r": "\r",
         "t": "\t",
         "v": "\v"
+    }
+
+    user_operators = {
+        ":": None,
+        ">": {
+            "=": None,
+            None: None
+        },
+        "<": {
+            "=": None,
+            None: None
+        },
+        "!": {
+            "=": None,
+        }
     }
 
     def read_tree(self, cur: Cursor) -> BaseNode:
@@ -122,10 +137,10 @@ class Parser:
         cur.consume_spaces()
         name = self.read_field_name(cur)
         cur.consume_spaces()
-        cur.consume_known_char(":")
+        operator = cur.consume_known_operator()
         cur.consume_spaces()
         value = self.read_field_value(cur)
-        return ExpressionNode(name=name, value=value, operator=Operator.EQ)
+        return ExpressionNode(name=name, value=value, operator=operator)
 
     def read_field_name(self, cur: Cursor) -> str:
         name = cur.pop()
