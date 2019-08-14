@@ -1,87 +1,78 @@
 import pytest
 
 from lucyparser import parse
-from lucyparser.condition import Condition, Operator
 from lucyparser.parsing import Cursor
-from lucyparser.tree import ConditionTree, LogicalOperator
+from lucyparser.tree import ExpressionNode, Operator, NotNode, AndNode, OrNode
 
 
 @pytest.mark.parametrize(
     "raw, parsed",
     [
-        ("a:1", Condition(operator=Operator.EQ, name="a", value="1")),
-        ("  \t  a    : 1   \t\t", Condition(operator=Operator.EQ, name="a", value="1")),
+        ("a:1", ExpressionNode(operator=Operator.EQ, name="a", value="1")),
+        ("  \t  a    : 1   \t\t", ExpressionNode(operator=Operator.EQ, name="a", value="1")),
         (
             "fancy_field_name: '$TrInG \" !,?ad  '",
-            Condition(
+            ExpressionNode(
                 operator=Operator.EQ, name="fancy_field_name", value='$TrInG " !,?ad  '
             ),
         ),
         (
             "NoT x: asd",
-            ConditionTree(
-                operator=LogicalOperator.NOT,
-                children=[Condition(name="x", value="asd", operator=Operator.EQ)],
+            NotNode(
+                children=[ExpressionNode(name="x", value="asd", operator=Operator.EQ)],
             ),
         ),
         (
             "NoT (x: asd)",
-            ConditionTree(
-                operator=LogicalOperator.NOT,
-                children=[Condition(name="x", value="asd", operator=Operator.EQ)],
+            NotNode(
+                children=[ExpressionNode(name="x", value="asd", operator=Operator.EQ)],
             ),
         ),
         (
             "((((NoT (((x: asd)))))))",
-            ConditionTree(
-                operator=LogicalOperator.NOT,
-                children=[Condition(name="x", value="asd", operator=Operator.EQ)],
+            NotNode(
+                children=[ExpressionNode(name="x", value="asd", operator=Operator.EQ)],
             ),
         ),
         (
             "a: x AND NOT b: y",
-            ConditionTree(
-                operator=LogicalOperator.AND,
+            AndNode(
                 children=[
-                    Condition(name="a", value="x", operator=Operator.EQ),
-                    ConditionTree(
-                        operator=LogicalOperator.NOT,
-                        children=[Condition(name="b", value="y", operator=Operator.EQ)],
+                    ExpressionNode(operator=Operator.EQ, name="a", value="x"),
+                    NotNode(
+                        children=[ExpressionNode(name="b", value="y", operator=Operator.EQ)],
                     ),
                 ],
             ),
         ),
         (
             "a: x OR b: y AND c  : z OR NOT d: xx",
-            ConditionTree(
-                operator=LogicalOperator.OR,
+            OrNode(
                 children=[
-                    Condition(name="a", value="x", operator=Operator.EQ),
-                    ConditionTree(
-                        operator=LogicalOperator.AND,
+                    ExpressionNode(operator=Operator.EQ, name="a", value="x"),
+                    AndNode(
                         children=[
-                            Condition(name="b", value="y", operator=Operator.EQ),
-                            Condition(name="c", value="z", operator=Operator.EQ),
+                            ExpressionNode(name="b", value="y", operator=Operator.EQ),
+                            ExpressionNode(name="c", value="z", operator=Operator.EQ),
                         ],
                     ),
-                    ConditionTree(
-                        operator=LogicalOperator.NOT,
+                    NotNode(
                         children=[
-                            Condition(name="d", value="xx", operator=Operator.EQ)
+                            ExpressionNode(name="d", value="xx", operator=Operator.EQ)
                         ],
                     ),
                 ],
             ),
         ),
-        ("a: 'use \\' quote'", Condition(operator=Operator.EQ, name="a", value="use ' quote")),
-        ('a: "use \\" quote"', Condition(operator=Operator.EQ, name="a", value='use " quote')),
+        ("a: 'use \\' quote'", ExpressionNode(operator=Operator.EQ, name="a", value="use ' quote")),
+        ('a: "use \\" quote"', ExpressionNode(operator=Operator.EQ, name="a", value='use " quote')),
     ],
 )
 def test_simple_case(raw, parsed):
     actual = parse(raw)
     actual.pprint()
     parsed.pprint()
-    assert parse(raw) == parsed
+    assert actual == parsed
 
 
 @pytest.mark.parametrize(

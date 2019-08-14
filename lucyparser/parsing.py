@@ -1,15 +1,12 @@
 import string
-from dataclasses import dataclass
-from typing import List, Tuple, Union
+from typing import List
 
-from .condition import Condition, Operator
 from .cursor import Cursor
-from .tree import ConditionTree, LogicalOperator
+from .exceptions import LucyUnexpectedEndException, LucyUnexpectedCharacter, LucyIllegalLiteral
+from .tree import BaseNode, simplify, NotNode, AndNode, ExpressionNode, Operator, LogicalNode, get_logical_node, LogicalOperator
 
-Expression = Union[ConditionTree, Condition]
 
-
-def parse(string: str) -> Union[ConditionTree, Condition]:
+def parse(string: str) -> BaseNode:
     """
     User facing parse function. All user needs to know about
     """
@@ -19,9 +16,7 @@ def parse(string: str) -> Union[ConditionTree, Condition]:
     tree = parser.read_tree(cursor)
     cursor.consume_spaces()
     if not cursor.empty():
-        raise Exception(
-            f"Input should've been finished by now! Left: {cursor.input[cursor.cursor:]}"
-        )
+        raise LucyUnexpectedEndException()
     return tree
 
 
@@ -42,69 +37,64 @@ class Parser:
         "v": "\v"
     }
 
-    def read_tree(self, cur: Cursor) -> Expression:
+    def read_tree(self, cur: Cursor) -> BaseNode:
         tree = self.read_expressions(cur)
-        if isinstance(tree, ConditionTree):
-            tree.simplify()
-        return tree
+        return simplify(tree)
 
-    def read_expressions(self, cur: Cursor) -> Expression:
+    def read_expressions(self, cur: Cursor) -> BaseNode:
         """
         Read several expressions, separated with logical operators
         """
 
-        def pop_expression_from_stack(
-            op_stack: List[LogicalOperator], expr_stack: List[Expression]
-        ) -> Expression:
-            op = operators_stack.pop()
+        def pop_expression_from_stack() -> LogicalNode:
             right = expressions_stack.pop()
             left = expressions_stack.pop()
-            return ConditionTree(operator=op, children=[left, right])
+            return get_logical_node(logical_operator=operators_stack.pop(), children=[left, right])
 
         expression = self.read_expression(cur)
         cur.consume_spaces()
+
         operators_stack: List[LogicalOperator] = []
-        expressions_stack: List[Expression] = [expression]
+        expressions_stack: List[BaseNode] = [expression]
+
         while 1:
             if cur.starts_with_a_word("and"):
-                op, expr = self.read_operator(cur, LogicalOperator.AND)
-                operators_stack.append(op)
-                expressions_stack.append(expr)
+                expressions_stack.append(self.read_and_operator(cur))
+                operators_stack.append(LogicalOperator.AND)
                 cur.consume_spaces()
+
             elif cur.starts_with_a_word("or"):
-                op, expr = self.read_operator(cur, LogicalOperator.OR)
+                node = self.read_or_operator(cur)
+
                 if operators_stack and operators_stack[-1] == LogicalOperator.AND:
-                    expressions_stack.append(
-                        pop_expression_from_stack(operators_stack, expressions_stack)
-                    )
-                operators_stack.append(op)
-                expressions_stack.append(expr)
+                    expressions_stack.append(pop_expression_from_stack())
+
+                operators_stack.append(LogicalOperator.OR)
+                expressions_stack.append(node)
                 cur.consume_spaces()
             else:
                 break
         while operators_stack:
-            expressions_stack.append(
-                pop_expression_from_stack(operators_stack, expressions_stack)
-            )
+            expressions_stack.append(pop_expression_from_stack())
         return expressions_stack[0]
 
-    def read_operator(
-        self, cur: Cursor, op: LogicalOperator
-    ) -> Tuple[LogicalOperator, Expression]:
+    def _read_operator(self, cur: Cursor, length: int) -> BaseNode:
         """
-        Read operator and folowing expression from the stream
+        Read operator and following expression from the stream
         """
-        if op == LogicalOperator.AND:
-            length = 3
-        else:
-            length = 2
         cur.consume(length)
         cur.consume_spaces()
         expression = self.read_expression(cur)
         cur.consume_spaces()
-        return op, expression
+        return expression
 
-    def read_expression(self, cur: Cursor) -> Expression:
+    def read_or_operator(self, cur: Cursor) -> BaseNode:
+        return self._read_operator(cur=cur, length=2)
+
+    def read_and_operator(self, cur: Cursor) -> BaseNode:
+        return self._read_operator(cur=cur, length=3)
+
+    def read_expression(self, cur: Cursor) -> BaseNode:
         """
         Read a single expression:
         Expression is:
@@ -120,14 +110,12 @@ class Parser:
         if cur.starts_with_a_word("not"):
             cur.consume(3)
             cur.consume_spaces()
-            tree = ConditionTree(
-                operator=LogicalOperator.NOT, children=[self.read_expression(cur)]
-            )
+            tree = NotNode(children=[self.read_expression(cur)])
             cur.consume_spaces()
             return tree
-        return self.read_condition(cur)
+        return AndNode(children=[self.read_condition(cur)])
 
-    def read_condition(self, cur: Cursor) -> Condition:
+    def read_condition(self, cur: Cursor) -> ExpressionNode:
         """
         Read a single entry of "name: value"
         """
@@ -136,14 +124,13 @@ class Parser:
         cur.consume_known_char(":")
         cur.consume_spaces()
         value = self.read_field_value(cur)
-        return Condition(name=name, value=value, operator=Operator.EQ)
+        return ExpressionNode(name=name, value=value, operator=Operator.EQ)
 
     def read_field_name(self, cur: Cursor) -> str:
         name = cur.pop()
         if name not in self.name_first_chars:
-            raise Exception(
-                f"Unexpected character {name}. Expected one of {self.name_first_chars}"
-            )
+            raise LucyUnexpectedCharacter(unexpected=name, expected=self.name_first_chars)
+
         while 1:
             next_char = cur.peek()
             if next_char and next_char in self.name_chars:
@@ -162,9 +149,7 @@ class Parser:
                     char_with_escaped_slash = self.escaped_chars.get(char)
 
                     if char_with_escaped_slash is None:
-                        raise Exception(
-                            f"Illegal literal with escaped slash: {char}"
-                        )
+                        raise LucyIllegalLiteral(literal=char)
                     value += char_with_escaped_slash
                     continue
 
@@ -181,11 +166,10 @@ class Parser:
             return read_until("'")
         next_char = cur.peek()
         if not next_char:
-            raise Exception("Unexpected end of input")
+            raise LucyUnexpectedEndException()
         if next_char not in self.value_chars:
-            raise Exception(
-                f"Unexpected character {next_char}, expected one of {self.value_chars}"
-            )
+            raise LucyUnexpectedCharacter(unexpected=next_char, expected=self.value_chars)
+
         value = cur.pop()
         while 1:
             next_char = cur.peek()
