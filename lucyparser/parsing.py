@@ -23,7 +23,7 @@ def parse(string: str) -> BaseNode:
 class Parser:
     name_chars = string.ascii_letters + string.digits + "_."
     name_first_chars = string.ascii_letters + "_"
-    value_chars = string.ascii_letters + string.digits
+    value_chars = string.ascii_letters + string.digits + "-.*_?!;,:"
     escaped_chars = {
         "\\": "\\",
         "n": "\n",
@@ -119,6 +119,7 @@ class Parser:
         """
         Read a single entry of "name: value"
         """
+        cur.consume_spaces()
         name = self.read_field_name(cur)
         cur.consume_spaces()
         cur.consume_known_char(":")
