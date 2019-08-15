@@ -37,21 +37,6 @@ class Parser:
         "v": "\v"
     }
 
-    user_operators = {
-        ":": None,
-        ">": {
-            "=": None,
-            None: None
-        },
-        "<": {
-            "=": None,
-            None: None
-        },
-        "!": {
-            "=": None,
-        }
-    }
-
     def read_tree(self, cur: Cursor) -> BaseNode:
         tree = self.read_expressions(cur)
         return simplify(tree)
