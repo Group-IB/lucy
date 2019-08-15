@@ -137,7 +137,7 @@ class Parser:
         cur.consume_spaces()
         name = self.read_field_name(cur)
         cur.consume_spaces()
-        operator = cur.consume_known_operator()
+        operator = cur.consume_operator()
         cur.consume_spaces()
         value = self.read_field_value(cur)
         return ExpressionNode(name=name, value=value, operator=operator)

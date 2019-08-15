@@ -73,7 +73,7 @@ from lucyparser.tree import ExpressionNode, Operator, NotNode, AndNode, OrNode
         ('a > -1', ExpressionNode(operator=Operator.GT, name="a", value='-1')),
         ('a>= -1', ExpressionNode(operator=Operator.GTE, name="a", value='-1')),
         ('a      <= -1', ExpressionNode(operator=Operator.LTE, name="a", value='-1')),
-        ('(a != -1)', ExpressionNode(operator=Operator.NEQ, name="a", value='-1')),
+        ('(a ! -1)', ExpressionNode(operator=Operator.NEQ, name="a", value='-1')),
     ],
 )
 def test_simple_case(raw, parsed):

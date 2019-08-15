@@ -14,28 +14,27 @@ class Operator(enum.Enum):
     NEQ = enum.auto()
 
 
-class UserOperator:
-    NEQ = "!="
+class RawOperator:
+    NEQ = "!"
     EQ = ":"
     GT = ">"
     LT = "<"
     GTE = ">="
     LTE = "<="
 
-    equal_not_required = [EQ]
-    equal_is_required = [NEQ[0]]
+    equal_not_required = [EQ, NEQ]
     equal_is_possible = [GT, LT]
 
     EQUAL_SIGN = "="
 
 
-USER_OPERATOR_TO_OPERATOR = {
-    UserOperator.NEQ: Operator.NEQ,
-    UserOperator.EQ: Operator.EQ,
-    UserOperator.GT: Operator.GT,
-    UserOperator.LT: Operator.LT,
-    UserOperator.GTE: Operator.GTE,
-    UserOperator.LTE: Operator.LTE,
+RAW_OPERATOR_TO_OPERATOR = {
+    RawOperator.NEQ: Operator.NEQ,
+    RawOperator.EQ: Operator.EQ,
+    RawOperator.GT: Operator.GT,
+    RawOperator.LT: Operator.LT,
+    RawOperator.GTE: Operator.GTE,
+    RawOperator.LTE: Operator.LTE,
 }
 
 
