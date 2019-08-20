@@ -14,6 +14,30 @@ class Operator(enum.Enum):
     NEQ = enum.auto()
 
 
+class RawOperator:
+    NEQ = "!"
+    EQ = ":"
+    GT = ">"
+    LT = "<"
+    GTE = ">="
+    LTE = "<="
+
+    equal_not_required = [EQ, NEQ]
+    equal_is_possible = [GT, LT]
+
+    EQUAL_SIGN = "="
+
+
+RAW_OPERATOR_TO_OPERATOR = {
+    RawOperator.NEQ: Operator.NEQ,
+    RawOperator.EQ: Operator.EQ,
+    RawOperator.GT: Operator.GT,
+    RawOperator.LT: Operator.LT,
+    RawOperator.GTE: Operator.GTE,
+    RawOperator.LTE: Operator.LTE,
+}
+
+
 class LogicalOperator(enum.Enum):
     NOT = enum.auto()
     AND = enum.auto()

@@ -3,7 +3,8 @@ from typing import List
 
 from .cursor import Cursor
 from .exceptions import LucyUnexpectedEndException, LucyUnexpectedCharacter, LucyIllegalLiteral
-from .tree import BaseNode, simplify, NotNode, AndNode, ExpressionNode, Operator, LogicalNode, get_logical_node, LogicalOperator
+from .tree import BaseNode, simplify, NotNode, AndNode, ExpressionNode, LogicalNode, get_logical_node, LogicalOperator, \
+    RawOperator, RAW_OPERATOR_TO_OPERATOR, Operator
 
 
 def parse(string: str) -> BaseNode:
@@ -122,10 +123,29 @@ class Parser:
         cur.consume_spaces()
         name = self.read_field_name(cur)
         cur.consume_spaces()
-        cur.consume_known_char(":")
+        operator = self.read_operator(cur=cur)
         cur.consume_spaces()
         value = self.read_field_value(cur)
-        return ExpressionNode(name=name, value=value, operator=Operator.EQ)
+        return ExpressionNode(name=name, value=value, operator=operator)
+
+    def read_operator(self, cur: Cursor) -> Operator:
+        current_operator = cur.pop()
+
+        if current_operator in RawOperator.equal_not_required:
+            return RAW_OPERATOR_TO_OPERATOR[current_operator]
+
+        equal_is_possible = current_operator in RawOperator.equal_is_possible
+
+        if not equal_is_possible:
+            raise LucyUnexpectedCharacter(unexpected=current_operator, expected="".join(RawOperator.equal_is_possible))
+
+        next_char = cur.peek()
+
+        if next_char == RawOperator.EQUAL_SIGN:
+            cur.pop()
+            current_operator += RawOperator.EQUAL_SIGN
+
+        return RAW_OPERATOR_TO_OPERATOR[current_operator]
 
     def read_field_name(self, cur: Cursor) -> str:
         name = cur.pop()
