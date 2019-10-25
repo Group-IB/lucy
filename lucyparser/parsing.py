@@ -1,5 +1,5 @@
 import string
-from typing import List
+from typing import List, Optional, Callable
 
 from .cursor import Cursor
 from .exceptions import LucyUnexpectedEndException, LucyUnexpectedCharacter, LucyIllegalLiteral
@@ -7,13 +7,15 @@ from .tree import BaseNode, simplify, NotNode, AndNode, ExpressionNode, LogicalN
     RawOperator, RAW_OPERATOR_TO_OPERATOR, Operator
 
 
-def parse(string: str) -> BaseNode:
+def parse(string: str, parser_class: Optional[Callable] = None) -> BaseNode:
     """
     User facing parse function. All user needs to know about
     """
+    if parser_class is None:
+        parser_class = Parser
     cursor = Cursor(string)
     cursor.consume_spaces()
-    parser = Parser()
+    parser = parser_class()
     tree = parser.read_tree(cursor)
     cursor.consume_spaces()
     if not cursor.empty():
@@ -37,6 +39,15 @@ class Parser:
         "t": "\t",
         "v": "\v"
     }
+
+    def permitted_name_char(self, c: string) -> bool:
+        return c in self.name_chars
+
+    def permitted_name_first_char(self, c: string) -> bool:
+        return c in self.name_first_chars
+
+    def permitted_name_value_char(self, c: string) -> bool:
+        return c in self.value_chars
 
     def read_tree(self, cur: Cursor) -> BaseNode:
         tree = self.read_expressions(cur)
@@ -149,12 +160,12 @@ class Parser:
 
     def read_field_name(self, cur: Cursor) -> str:
         name = cur.pop()
-        if name not in self.name_first_chars:
+        if not self.permitted_name_first_char(name):
             raise LucyUnexpectedCharacter(unexpected=name, expected=self.name_first_chars)
 
         while 1:
             next_char = cur.peek()
-            if next_char and next_char in self.name_chars:
+            if next_char and self.permitted_name_char(next_char):
                 name += cur.pop()
             else:
                 return name
@@ -188,12 +199,12 @@ class Parser:
         next_char = cur.peek()
         if not next_char:
             raise LucyUnexpectedEndException()
-        if next_char not in self.value_chars:
+        if not self.permitted_name_value_char(next_char):
             raise LucyUnexpectedCharacter(unexpected=next_char, expected=self.value_chars)
 
         value = cur.pop()
         while 1:
             next_char = cur.peek()
-            if not next_char or next_char not in self.value_chars:
+            if not next_char or not self.permitted_name_value_char(next_char):
                 return value
             value += cur.pop()
