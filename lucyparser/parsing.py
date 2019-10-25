@@ -40,13 +40,13 @@ class Parser:
         "v": "\v"
     }
 
-    def permitted_name_char(self, c: string) -> bool:
+    def permitted_name_char(self, c: str) -> bool:
         return c in self.name_chars
 
-    def permitted_name_first_char(self, c: string) -> bool:
+    def permitted_name_first_char(self, c: str) -> bool:
         return c in self.name_first_chars
 
-    def permitted_name_value_char(self, c: string) -> bool:
+    def permitted_name_value_char(self, c: str) -> bool:
         return c in self.value_chars
 
     def read_tree(self, cur: Cursor) -> BaseNode:
