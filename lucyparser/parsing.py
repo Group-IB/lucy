@@ -63,6 +63,7 @@ class Parser:
             left = expressions_stack.pop()
             return get_logical_node(logical_operator=operators_stack.pop(), children=[left, right])
 
+        cur.consume_spaces()
         expression = self.read_expression(cur)
         cur.consume_spaces()
 

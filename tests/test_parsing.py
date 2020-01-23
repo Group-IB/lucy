@@ -76,6 +76,34 @@ from lucyparser.tree import ExpressionNode, Operator, NotNode, AndNode, OrNode
         ('(a ! -1)', ExpressionNode(operator=Operator.NEQ, name="a", value='-1')),
         ('mail_from: ululul@ululu.net', ExpressionNode(operator=Operator.EQ, name="mail_from", value='ululul@ululu.net')),
         ('(a ! "ululu||ulul")', ExpressionNode(operator=Operator.NEQ, name="a", value='ululu||ulul')),
+        (
+                'x: 1 AND ( (y: 2) OR (y: 3) )',
+                AndNode(
+                    children=[
+                        ExpressionNode(name="x", value="1", operator=Operator.EQ),
+                        OrNode(
+                            children=[
+                                ExpressionNode(name="y", value="2", operator=Operator.EQ),
+                                ExpressionNode(name="y", value="3", operator=Operator.EQ),
+                            ]
+                        )
+                    ]
+                )
+        ),
+        (
+                'x: 1 AND ((y: 2) OR (y: 3))',
+                AndNode(
+                    children=[
+                        ExpressionNode(name="x", value="1", operator=Operator.EQ),
+                        OrNode(
+                            children=[
+                                ExpressionNode(name="y", value="2", operator=Operator.EQ),
+                                ExpressionNode(name="y", value="3", operator=Operator.EQ),
+                            ]
+                        )
+                    ]
+                )
+        ),
     ],
 )
 def test_simple_case(raw, parsed):
