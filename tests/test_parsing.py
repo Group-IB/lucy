@@ -113,6 +113,10 @@ def test_simple_case(raw, parsed):
     assert actual == parsed
 
 
+def test_simplify_recursion():
+    query = ' OR '.join(["a: 1"] * 1000)
+    parse(query)
+
 @pytest.mark.parametrize(
     "string,word,result",
     [
