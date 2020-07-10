@@ -125,15 +125,20 @@ def simplify(tree: BaseNode) -> BaseNode:
     if isinstance(tree, AndNode) and (len(tree.children) == 1):
         return tree.children[0]
 
-    tree.children = [simplify(child) if isinstance(child, LogicalNode) else child for child in tree.children]
+    if isinstance(tree, (OrNode, AndNode)):
+        changed = True
+        while changed:
+            changed = False
+            new_children: List[BaseNode] = []
+            for child in tree.children:
+                if isinstance(child, LogicalNode) and type(child) == type(tree):
+                    new_children.extend(child.children)
+                    changed = True
+                else:
+                    new_children.append(child)
+            tree.children = new_children
 
-    if not isinstance(tree, NotNode):
-        new_children: List[BaseNode] = []
-        for child in tree.children:
-            if isinstance(child, LogicalNode) and type(child) == type(tree):
-                new_children.extend(child.children)
-            else:
-                new_children.append(child)
-        tree.children = new_children
+    tree.children = [simplify(child) for child in tree.children]
+
 
     return tree
