@@ -3,6 +3,7 @@ import pytest
 from lucyparser import parse
 from lucyparser.parsing import Cursor
 from lucyparser.tree import ExpressionNode, Operator, NotNode, AndNode, OrNode
+from lucyparser.utils import build_query
 
 
 @pytest.mark.parametrize(
@@ -99,3 +100,17 @@ def test_simple_case(raw, parsed):
 )
 def test_starts_with_a_word(string, word, result):
     assert Cursor(string).starts_with_a_word(word) is result
+
+
+@pytest.mark.parametrize(
+    "query,expected",
+    [
+        ('x: y OR y: z AND (NOT n: n OR ((((l: z)))))', 'x: "y" OR (y: "z" AND (NOT n: "n" OR l: "z"))'),
+        ('(((NOT (x: y OR b:z))))', 'NOT (x: "y" OR b: "z")'),
+        ('(((NOT (x: y) OR b:z)))', 'NOT x: "y" OR b: "z"'),
+        ('(((NOT (x: y) OR b:"\\"ululul")))', 'NOT x: "y" OR b: "\\"ululul"'),
+        ('NOT x: y', 'NOT x: "y"'),
+    ],
+)
+def test_get_str_from_tree(query, expected):
+    assert build_query(parse(query)) == expected

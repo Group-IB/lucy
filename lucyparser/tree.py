@@ -38,6 +38,9 @@ RAW_OPERATOR_TO_OPERATOR = {
 }
 
 
+OPERATOR_TO_RAW_OPERATOR = {v: k for k, v in RAW_OPERATOR_TO_OPERATOR.items()}
+
+
 class LogicalOperator(enum.Enum):
     NOT = enum.auto()
     AND = enum.auto()
