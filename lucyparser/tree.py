@@ -12,6 +12,7 @@ class Operator(enum.Enum):
     LT = enum.auto()
     EQ = enum.auto()
     NEQ = enum.auto()
+    MATCH = enum.auto()
 
 
 class RawOperator:
@@ -21,8 +22,9 @@ class RawOperator:
     LT = "<"
     GTE = ">="
     LTE = "<="
+    MATCH = "~"
 
-    equal_not_required = [EQ, NEQ]
+    equal_not_required = [EQ, NEQ, MATCH]
     equal_is_possible = [GT, LT]
 
     EQUAL_SIGN = "="
@@ -35,6 +37,7 @@ RAW_OPERATOR_TO_OPERATOR = {
     RawOperator.LT: Operator.LT,
     RawOperator.GTE: Operator.GTE,
     RawOperator.LTE: Operator.LTE,
+    RawOperator.MATCH: Operator.MATCH
 }
 
 
