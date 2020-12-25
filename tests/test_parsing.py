@@ -67,6 +67,11 @@ from lucyparser.tree import ExpressionNode, Operator, NotNode, AndNode, OrNode
         ("a: 'use \\' quote'", ExpressionNode(operator=Operator.EQ, name="a", value="use ' quote")),
         ('a: "use \\" quote"', ExpressionNode(operator=Operator.EQ, name="a", value='use " quote')),
         ('a: -1', ExpressionNode(operator=Operator.EQ, name="a", value='-1')),
+        ('string.field ~ "[a-z]{0-9}.*test"', ExpressionNode(
+            operator=Operator.MATCH,
+            name="string.field",
+            value="[a-z]{0-9}.*test",
+        )),
         ('a: 123.456', ExpressionNode(operator=Operator.EQ, name="a", value='123.456')),
         ('(    spaces_before_name   : 123  )', ExpressionNode(operator=Operator.EQ, name="spaces_before_name", value='123')),
         ("a:'*s.om.e-*fancy_string?'", ExpressionNode(operator=Operator.EQ, name="a", value='*s.om.e-*fancy_string?')),
