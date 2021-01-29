@@ -106,6 +106,9 @@ class ExpressionNode(BaseNode):
 
     operator: Operator
 
+    def pprint(self, pad=0):
+        print(" " * pad + str(self.operator) + " " + str(self.value))
+
 
 def simplify(tree: BaseNode) -> BaseNode:
     """
