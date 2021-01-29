@@ -52,10 +52,10 @@ class BaseNode:
     def pprint(self, pad=0):
         print(" " * pad + str(self.operator))
 
-    is_and_node: bool = False
-    is_or_node: bool = False
-    is_not_node: bool = False
-    is_expression_node: bool = False
+    is_and_node = False
+    is_or_node = False
+    is_not_node = False
+    is_expression_node = False
 
 
 @dataclass
