@@ -52,6 +52,11 @@ class BaseNode:
     def pprint(self, pad=0):
         print(" " * pad + str(self.operator))
 
+    is_and_node: bool = False
+    is_or_node: bool = False
+    is_not_node: bool = False
+    is_expression_node: bool = False
+
 
 @dataclass
 class LogicalNode(BaseNode):
@@ -75,15 +80,21 @@ class LogicalNode(BaseNode):
 class AndNode(LogicalNode):
     _logical_operator = LogicalOperator.AND
 
+    is_and_node = True
+
 
 @dataclass
 class OrNode(LogicalNode):
     _logical_operator = LogicalOperator.OR
 
+    is_or_node = True
+
 
 @dataclass
 class NotNode(LogicalNode):
     _logical_operator = LogicalOperator.NOT
+
+    is_not_node = True
 
 
 def get_logical_node(logical_operator: LogicalOperator, children: List = field(default_factory=list)):
@@ -105,6 +116,8 @@ class ExpressionNode(BaseNode):
     value: Any
 
     operator: Operator
+
+    is_expression_node = True
 
 
 def simplify(tree: BaseNode) -> BaseNode:
