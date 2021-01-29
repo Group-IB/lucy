@@ -143,5 +143,4 @@ def simplify(tree: BaseNode) -> BaseNode:
 
     tree.children = [simplify(child) for child in tree.children]
 
-
     return tree
