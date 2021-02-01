@@ -109,6 +109,63 @@ from lucyparser.tree import ExpressionNode, Operator, NotNode, AndNode, OrNode
                     ]
                 )
         ),
+        (
+                'x: [\'1\', \'2\', \'    33333  \']',
+                OrNode(
+                    children=[
+                        ExpressionNode(name="x", value='1', operator=Operator.EQ),
+                        ExpressionNode(name="x", value='2', operator=Operator.EQ),
+                        ExpressionNode(name="x", value='    33333  ', operator=Operator.EQ),
+                    ]
+                )
+        ),
+        (
+                'x: [1,2,3]',
+                OrNode(
+                    children=[
+                        ExpressionNode(name="x", value='1', operator=Operator.EQ),
+                        ExpressionNode(name="x", value='2', operator=Operator.EQ),
+                        ExpressionNode(name="x", value='3', operator=Operator.EQ),
+                    ]
+                )
+        ),
+        (
+                'x: [1,2,3,       "4 here"      ] AND z: z',
+                AndNode(
+                    children=[
+                        OrNode(
+                            children=[
+                                ExpressionNode(name="x", value='1', operator=Operator.EQ),
+                                ExpressionNode(name="x", value='2', operator=Operator.EQ),
+                                ExpressionNode(name="x", value='3', operator=Operator.EQ),
+                                ExpressionNode(name="x", value='4 here', operator=Operator.EQ),
+                            ]
+                        ),
+                        ExpressionNode(name='z', value='z', operator=Operator.EQ)
+                    ]
+                )
+        ),
+        (
+                'field1: value1 OR (field2: value2 AND     x: [       1,2,3, 4 ])',
+                OrNode(
+                    children=[
+                        ExpressionNode(name='field1', value='value1', operator=Operator.EQ),
+                        AndNode(
+                            children=[
+                                ExpressionNode(name='field2', value='value2', operator=Operator.EQ),
+                                OrNode(
+                                    children=[
+                                        ExpressionNode(name="x", value='1', operator=Operator.EQ),
+                                        ExpressionNode(name="x", value='2', operator=Operator.EQ),
+                                        ExpressionNode(name="x", value='3', operator=Operator.EQ),
+                                        ExpressionNode(name="x", value='4', operator=Operator.EQ),
+                                    ]
+                                )
+                            ]
+                        )
+                    ]
+                )
+        ),
     ],
 )
 def test_simple_case(raw, parsed):
@@ -121,6 +178,7 @@ def test_simple_case(raw, parsed):
 def test_simplify_recursion():
     query = ' OR '.join(["a: 1"] * 1000)
     parse(query)
+
 
 @pytest.mark.parametrize(
     "string,word,result",

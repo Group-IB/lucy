@@ -4,7 +4,7 @@ from typing import List, Optional, Callable
 from .cursor import Cursor
 from .exceptions import LucyUnexpectedEndException, LucyUnexpectedCharacter, LucyIllegalLiteral
 from .tree import BaseNode, simplify, NotNode, AndNode, ExpressionNode, LogicalNode, get_logical_node, LogicalOperator, \
-    RawOperator, RAW_OPERATOR_TO_OPERATOR, Operator
+    RawOperator, RAW_OPERATOR_TO_OPERATOR, Operator, OrNode
 
 
 def parse(string: str, parser_class: Optional[Callable] = None) -> BaseNode:
@@ -128,7 +128,7 @@ class Parser:
             return tree
         return AndNode(children=[self.read_condition(cur)])
 
-    def read_condition(self, cur: Cursor) -> ExpressionNode:
+    def read_condition(self, cur: Cursor) -> [OrNode, ExpressionNode]:
         """
         Read a single entry of "name: value"
         """
@@ -137,6 +137,12 @@ class Parser:
         cur.consume_spaces()
         operator = self.read_operator(cur=cur)
         cur.consume_spaces()
+        if operator == Operator.EQ:
+            # may be there is a construction like x: [y, z]
+            values = self.read_several_field_values(cur=cur)
+            if values:
+                return OrNode(children=[ExpressionNode(name=name, value=value, operator=operator) for value in values])
+
         value = self.read_field_value(cur)
         return ExpressionNode(name=name, value=value, operator=operator)
 
@@ -209,3 +215,20 @@ class Parser:
             if not next_char or not self.permitted_name_value_char(next_char):
                 return value
             value += cur.pop()
+
+    def read_several_field_values(self, cur: Cursor) -> List[str]:
+        if not cur.starts_with_a_char("["):
+            return []
+
+        cur.consume_known_char("[")
+        values = self.read_until(cur=cur, terminator="]")
+        raw_values = [value for value in map(lambda value: value.strip(), values.split(',')) if value]
+
+        ret = []
+
+        for raw_value in raw_values:
+            raw_value_cursor = Cursor(input=raw_value)
+            raw_value_cursor.consume_spaces()
+            ret.append(self.read_field_value(cur=raw_value_cursor))
+
+        return ret
