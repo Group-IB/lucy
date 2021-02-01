@@ -171,32 +171,32 @@ class Parser:
             else:
                 return name
 
-    def read_field_value(self, cur: Cursor) -> str:
-        def read_until(terminator: str) -> str:
-            value = ""
-            while 1:
+    def read_until(self, cur: Cursor, terminator: str) -> str:
+        value = ""
+        while 1:
+            char = cur.pop()
+
+            if char == "\\":
                 char = cur.pop()
+                char_with_escaped_slash = self.escaped_chars.get(char)
 
-                if char == "\\":
-                    char = cur.pop()
-                    char_with_escaped_slash = self.escaped_chars.get(char)
+                if char_with_escaped_slash is None:
+                    raise LucyIllegalLiteral(literal=char)
+                value += char_with_escaped_slash
+                continue
 
-                    if char_with_escaped_slash is None:
-                        raise LucyIllegalLiteral(literal=char)
-                    value += char_with_escaped_slash
-                    continue
+            elif char == terminator:
+                return value
 
-                elif char == terminator:
-                    return value
+            value += char
 
-                value += char
-
+    def read_field_value(self, cur: Cursor) -> str:
         if cur.starts_with_a_char('"'):
             cur.consume_known_char('"')
-            return read_until('"')
+            return self.read_until(cur=cur, terminator='"')
         if cur.starts_with_a_char("'"):
             cur.consume_known_char("'")
-            return read_until("'")
+            return self.read_until(cur=cur, terminator="'")
         next_char = cur.peek()
         if not next_char:
             raise LucyUnexpectedEndException()
