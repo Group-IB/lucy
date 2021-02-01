@@ -25,7 +25,7 @@ class RawOperator:
     MATCH = "~"
 
     equal_not_required = [EQ, NEQ, MATCH]
-    equal_is_possible = [GT, LT]
+    equal_is_possible = [GT, LT]  # operators with possible equal sign as second symbol
 
     EQUAL_SIGN = "="
 
