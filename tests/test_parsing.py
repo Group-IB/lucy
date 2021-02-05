@@ -166,6 +166,15 @@ from lucyparser.tree import ExpressionNode, Operator, NotNode, AndNode, OrNode
                     ]
                 )
         ),
+        (
+                'x: ["]", "["]',
+                OrNode(
+                    children=[
+                        ExpressionNode(name='x', value=']', operator=Operator.EQ),
+                        ExpressionNode(name='x', value='[', operator=Operator.EQ),
+                    ]
+                )
+        ),
     ],
 )
 def test_simple_case(raw, parsed):

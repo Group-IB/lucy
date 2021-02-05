@@ -26,7 +26,7 @@ def parse(string: str, parser_class: Optional[Callable] = None) -> BaseNode:
 class Parser:
     name_chars = string.ascii_letters + string.digits + "_."
     name_first_chars = string.ascii_letters + "_"
-    value_chars = string.ascii_letters + string.digits + "-.*_?!;,:@|"
+    value_chars = string.ascii_letters + string.digits + "-.*_?!;:@|"
     escaped_chars = {
         "\\": "\\",
         "n": "\n",
@@ -137,14 +137,13 @@ class Parser:
         cur.consume_spaces()
         operator = self.read_operator(cur=cur)
         cur.consume_spaces()
-        if operator == Operator.EQ:
-            # may be there is a construction like x: [y, z]
-            values = self.read_several_field_values(cur=cur)
-            if values:
-                return OrNode(children=[ExpressionNode(name=name, value=value, operator=operator) for value in values])
 
-        value = self.read_field_value(cur)
-        return ExpressionNode(name=name, value=value, operator=operator)
+        # may be there is a construction like x: [y, z]
+        values = self.read_several_field_values(cur=cur)
+        if len(values) == 1:
+            return ExpressionNode(name=name, value=values[0], operator=operator)
+
+        return OrNode(children=[ExpressionNode(name=name, value=value, operator=operator) for value in values])
 
     def read_operator(self, cur: Cursor) -> Operator:
         current_operator = cur.pop()
@@ -218,17 +217,24 @@ class Parser:
 
     def read_several_field_values(self, cur: Cursor) -> List[str]:
         if not cur.starts_with_a_char("["):
-            return []
+            return [self.read_field_value(cur=cur)]
 
+        values = []
         cur.consume_known_char("[")
-        values = self.read_until(cur=cur, terminator="]")
-        raw_values = [value for value in map(lambda value: value.strip(), values.split(',')) if value]
+        coma_expected = False
 
-        ret = []
+        while not cur.starts_with_a_char(']'):
+            if coma_expected:
+                cur.consume_known_char(",")
 
-        for raw_value in raw_values:
-            raw_value_cursor = Cursor(input=raw_value)
-            raw_value_cursor.consume_spaces()
-            ret.append(self.read_field_value(cur=raw_value_cursor))
+            cur.consume_spaces()
+            values.append(self.read_field_value(cur=cur))
 
-        return ret
+            cur.consume_spaces()
+            coma_expected = True
+
+        if not values:
+            raise LucyUnexpectedCharacter(unexpected=']', expected=self.value_chars)
+
+        cur.consume_known_char("]")
+        return values
