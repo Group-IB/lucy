@@ -1,5 +1,5 @@
 import string
-from typing import List, Optional, Callable
+from typing import List, Optional, Callable, Union
 
 from .cursor import Cursor
 from .exceptions import LucyUnexpectedEndException, LucyUnexpectedCharacter, LucyIllegalLiteral
@@ -128,7 +128,7 @@ class Parser:
             return tree
         return AndNode(children=[self.read_condition(cur)])
 
-    def read_condition(self, cur: Cursor) -> [OrNode, ExpressionNode]:
+    def read_condition(self, cur: Cursor) -> Union[OrNode, ExpressionNode]:
         """
         Read a single entry of "name: value"
         """
