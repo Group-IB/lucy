@@ -2,7 +2,8 @@ import pytest
 
 from lucyparser import parse
 from lucyparser.parsing import Cursor
-from lucyparser.tree import ExpressionNode, Operator, NotNode, AndNode, OrNode
+from lucyparser.tree import ExpressionNode, Operator, NotNode, AndNode, OrNode, BaseNode
+from lucyparser.utils import build_query, update_tree
 
 
 @pytest.mark.parametrize(
@@ -203,3 +204,49 @@ def test_simplify_recursion():
 )
 def test_starts_with_a_word(string, word, result):
     assert Cursor(string).starts_with_a_word(word) is result
+
+
+@pytest.mark.parametrize(
+    "query,expected",
+    [
+        ('x: y OR y: z AND (NOT n: n OR ((((l: z)))))', 'x: "y" OR (y: "z" AND (NOT n: "n" OR l: "z"))'),
+        ('(((NOT (x: y OR b:z))))', 'NOT (x: "y" OR b: "z")'),
+        ('(((NOT (x: y) OR b:z)))', 'NOT x: "y" OR b: "z"'),
+        ('(((NOT (x: y) OR b:"\\"ululul")))', 'NOT x: "y" OR b: "\\"ululul"'),
+        ('NOT x: y', 'NOT x: "y"'),
+    ],
+)
+def test_get_str_from_tree(query, expected):
+    assert build_query(parse(query)) == expected
+
+
+@pytest.mark.parametrize(
+    "query,replaced_value_x_query,replaced_key_x_query",
+    [
+        ('x: "y"', 'x: "y"', 'not_x: "y"'),
+        ('y: "x"', 'y: "not_x"', 'y: "x"'),
+        ('x: "x"', 'x: "not_x"', 'not_x: "x"'),
+    ],
+)
+def test_update_tree(query, replaced_value_x_query, replaced_key_x_query):
+    def replace_value_x(tree: BaseNode) -> int:
+        if isinstance(tree, ExpressionNode) and tree.value == "x":
+            tree.value = "not_x"
+            return 1
+        return 0
+
+    # replace value x
+    tree = parse(query)
+    update_tree(tree=tree, handler=replace_value_x)
+    assert build_query(tree) == replaced_value_x_query
+
+    def replace_key_x(tree: BaseNode) -> int:
+        if isinstance(tree, ExpressionNode) and tree.name == "x":
+            tree.name = "not_x"
+            return 1
+        return 0
+
+    # replace key x
+    tree = parse(query)
+    update_tree(tree=tree, handler=replace_key_x)
+    assert build_query(tree) == replaced_key_x_query
