@@ -69,7 +69,7 @@ class LogicalNode(BaseNode):
 
     @property
     def operator(self) -> Optional[LogicalOperator]:
-        return self._logical_operator
+        return self._logical_operator # type: ignore
 
     def pprint(self, pad=0):
         super().pprint(pad=pad)
@@ -80,8 +80,8 @@ class LogicalNode(BaseNode):
 
     def to_dict(self) -> Dict:
         return {
-            "type": self.operator.name.lower(),
-            "operator": self.operator.name,
+            "type": self.operator.name.lower(), # type: ignore
+            "operator": self.operator.name, # type: ignore
             "children": [child.to_dict() for child in self.children]
         }
 
