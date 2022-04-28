@@ -1,6 +1,6 @@
 import enum
 from dataclasses import dataclass, field
-from typing import List, Any, Optional
+from typing import List, Any, Optional, Dict
 
 from .exceptions import LucyUndefinedOperator
 
@@ -57,6 +57,9 @@ class BaseNode:
     is_not_node = False
     is_expression_node = False
 
+    def to_dict(self) -> Dict:
+        return {}
+
 
 @dataclass
 class LogicalNode(BaseNode):
@@ -65,7 +68,7 @@ class LogicalNode(BaseNode):
     _logical_operator = Optional[LogicalOperator]
 
     @property
-    def operator(self):
+    def operator(self) -> Optional[LogicalOperator]:
         return self._logical_operator
 
     def pprint(self, pad=0):
@@ -74,6 +77,13 @@ class LogicalNode(BaseNode):
         pad += 2
         for child in self.children:
             child.pprint(pad)
+
+    def to_dict(self) -> Dict:
+        return {
+            "type": self.operator.name.lower(),
+            "operator": self.operator.name,
+            "children": [child.to_dict() for child in self.children]
+        }
 
 
 @dataclass
@@ -121,6 +131,14 @@ class ExpressionNode(BaseNode):
 
     def pprint(self, pad=0):
         print(" " * pad + str(self.operator) + " " + str(self.value))
+
+    def to_dict(self) -> Dict:
+        return {
+            "type": "expr",
+            "operator": self.operator.name.lower(),
+            "name": self.name,
+            "value": self.value,
+        }
 
 
 def simplify(tree: BaseNode) -> BaseNode:
